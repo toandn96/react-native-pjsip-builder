@@ -50,7 +50,7 @@ RUN mkdir -p /sources/android_ndk && \
     mkdir -p /sources/swig && \
     mkdir -p /sources/openssl && \
     mkdir -p /sources/opus && \
-    mkdir -p /sources/openh264
+    # mkdir -p /sources/openh264
 
 # Download Android NDK
 RUN cd /sources/android_ndk && \
@@ -108,19 +108,12 @@ RUN cd /sources/opus && \
     cd ./jni && \
     curl -L -# -o Android.mk "$OPUS_ANDROID_MK_DOWNLOAD_URL"
 
-# Download OpenH264
-RUN cd /sources/openh264 && \
-    curl -L -# -o openh264.tar.gz "$OPENH264_DOWNLOAD_URL" && \
-    tar xzf openh264.tar.gz && \
-    rm -rf openh264.tar.gz && \
-    mv openh264-*/* ./
 
 ##############################
-# Build swig, openssl, opus, openh264
+# Build swig, openssl, opus
 ##############################
 
 RUN mkdir -p /output/openssl/ && \
-    mkdir -p /output/openh264/ && \
     mkdir -p /output/pjsip && \
     mkdir -p /output/opus
 
@@ -137,14 +130,6 @@ RUN cd /sources/swig && \
     ./configure && \
     make && \
     make install
-
-# Build OpenH264
-ADD ./build_openh264.sh /usr/local/sbin/
-RUN IFS=" " && \
-    for arch in $TARGET_ARCHS; \
-    do \
-      build_openh264.sh ${arch}; \
-    done
 
 # Build openssl
 ADD ./build_openssl.sh /usr/local/sbin/
@@ -166,9 +151,3 @@ RUN IFS=" " && \
 RUN mkdir -p /dist/android/src/main && \
     mv /output/pjsip/* /dist/android/src/main && \
     rm -rf /dist/android/src/main/java/org/pjsip/pjsua2/app
-
-RUN IFS=" " && \
-    for arch in $TARGET_ARCHS; \
-    do \
-      mv /output/openh264/${arch}/lib/libopenh264.so /dist/android/src/main/jniLibs/${arch}/; \
-    done
