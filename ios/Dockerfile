@@ -19,5 +19,5 @@ RUN mkdir -p /vialer/ && \
     unzip 3.6.zip
 
 RUN mkdir -p /dist/ios/VialerPJSIP.framework && \
-    mv /vialer/Vialer-pjsip-iOS-3.2.0/VialerPJSIP.framework/Versions/Current/* /dist/ios/VialerPJSIP.framework && \
-    mv /vialer/VialerPJSIP?raw=true /dist/ios/VialerPJSIP.framework/VialerPJSIP
+    mv /vialer/Vialer-pjsip-iOS-3.6/VialerPJSIP.framework/Versions/Current/* /dist/ios/VialerPJSIP.framework && \
+    mv /vialer/VialerPJSIP /dist/ios/VialerPJSIP.framework/VialerPJSIP
