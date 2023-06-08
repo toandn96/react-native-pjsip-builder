@@ -11,7 +11,7 @@ RUN dpkg --add-architecture i386 && \
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install \
     software-properties-common git curl bzip2 gcc g++ binutils make autoconf openssl \
-    libssl-dev ant libopus0 libpcre3 libpcre3-dev build-essential nasm libc6:i386 libstdc++6:i386 zlib1g:i386 \
+    libssl-dev libc6-dev file ant libopus0 libpcre3 libpcre3-dev build-essential nasm libc6:i386 libstdc++6:i386 zlib1g:i386 \
     openjdk-8-jdk unzip
 
 ##############################
@@ -20,20 +20,17 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install \
 
 # ENV TARGET_ARCHS "armeabi armeabi-v7a x86 mips arm64-v8a x86_64 mips64"
 ENV TARGET_ARCHS "armeabi-v7a x86 arm64-v8a x86_64" 
-ENV ANDROID_NDK_DOWNLOAD_URL "https://dl.google.com/android/repository/android-ndk-r12b-linux-x86_64.zip"
+ENV ANDROID_NDK_DOWNLOAD_URL "https://dl.google.com/android/repository/android-ndk-r25c-linux.zip"
 ENV ANDROID_SDK_DOWNLOAD_URL "https://dl.google.com/android/repository/tools_r25.2.5-linux.zip"
 ENV ANDROID_SETUP_APIS "23 25"
 ENV ANDROID_BUILD_TOOLS_VERSION 25
 ENV ANDROID_TARGET_API 23
 
-ENV PJSIP_DOWNLOAD_URL "http://www.pjsip.org/release/2.7.1/pjproject-2.7.1.tar.bz2"
+ENV PJSIP_DOWNLOAD_URL "https://github.com/pjsip/pjproject/archive/refs/tags/2.13.tar.gz"
 
-ENV SWIG_DOWNLOAD_URL "http://prdownloads.sourceforge.net/swig/swig-3.0.7.tar.gz"
+ENV SWIG_DOWNLOAD_URL "http://prdownloads.sourceforge.net/swig/swig-4.1.1.tar.gz"
 
 ENV OPENSSL_DOWNLOAD_URL "https://www.openssl.org/source/openssl-1.0.2g.tar.gz"
-
-ENV OPENH264_DOWNLOAD_URL "https://github.com/cisco/openh264/archive/v1.7.0.tar.gz"
-ENV OPENH264_TARGET_NDK_LEVEL 23
 
 ENV OPUS_DOWNLOAD_URL "http://downloads.xiph.org/releases/opus/opus-1.2.1.tar.gz"
 ENV OPUS_ANDROID_MK_DOWNLOAD_URL "https://trac.pjsip.org/repos/raw-attachment/ticket/1904/Android.mk"
@@ -49,8 +46,7 @@ RUN mkdir -p /sources/android_ndk && \
     mkdir -p /sources/pjsip && \
     mkdir -p /sources/swig && \
     mkdir -p /sources/openssl && \
-    mkdir -p /sources/opus && \
-    # mkdir -p /sources/openh264
+    mkdir -p /sources/opus
 
 # Download Android NDK
 RUN cd /sources/android_ndk && \
@@ -58,6 +54,10 @@ RUN cd /sources/android_ndk && \
     unzip ndk.zip && \
     rm -rf ndk.zip && \
     mv android-*/* ./
+
+ENV ANDROID_NDK_ROOT /sources/android_ndk
+ENV MACHINE linux-x86_64
+ENV TOOLCHAIN $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/$MACHINE
 
 # Download Android SDK & APIs
 RUN cd /sources/android_sdk && \
@@ -79,9 +79,9 @@ RUN cd /sources/android_sdk/tools && \
 
 # Download Pjsip
 RUN cd /sources/pjsip && \
-    curl -L -# -o pjsip.tar.bz2 "$PJSIP_DOWNLOAD_URL" && \
-    tar xjf pjsip.tar.bz2 && \
-    rm -rf pjsip.tar.bz2 && \
+    curl -L -# -o pjsip.tar.gz "$PJSIP_DOWNLOAD_URL" && \
+    tar xzf pjsip.tar.gz && \
+    rm -rf pjsip.tar.gz && \
     mv pjproject-*/* ./
 
 # Download Swig
@@ -122,15 +122,21 @@ ADD ./build_opus.sh /usr/local/sbin/
 RUN IFS=" " && \
     for arch in $TARGET_ARCHS; \
     do \
-      build_opus.sh ${arch}; \
+      /usr/local/sbin/build_opus.sh ${arch}; \
     done
 
 # Build swig
+RUN apt-get -y install libboost-dev libpcre3-dev
+ENV PCRE2_DOWNLOAD_URL "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.42/pcre2-10.42.tar.bz2"
 RUN cd /sources/swig && \
+    curl -L -# -o pcre2-10.42.tar.bz2 $PCRE2_DOWNLOAD_URL && \
+    chmod +x ./Tools/pcre-build.sh && \
+    ./Tools/pcre-build.sh && \
     ./configure && \
     make && \
     make install
 
+RUN apt-get install python3-distutils -y
 # Build openssl
 ADD ./build_openssl.sh /usr/local/sbin/
 RUN IFS=" " && \
@@ -139,8 +145,10 @@ RUN IFS=" " && \
       build_openssl.sh ${arch}; \
     done
 
+
 # Build pjsip
 ADD ./build_pjsip.sh /usr/local/sbin/
+
 RUN IFS=" " && \
     for arch in $TARGET_ARCHS; \
     do \
