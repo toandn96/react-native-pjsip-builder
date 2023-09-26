@@ -4,36 +4,38 @@ FROM ubuntu:latest
 # Download dependencies
 ##############################
 
-RUN dpkg --add-architecture i386 && \
+RUN dpkg --add-architecture amd64 && \
     apt-get -y upgrade && \
     apt-get -y dist-upgrade && \
     apt-get update
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install \
     software-properties-common git curl bzip2 gcc g++ binutils make autoconf openssl \
-    libssl-dev libc6-dev file ant libopus0 libpcre3 libpcre3-dev build-essential nasm libc6:i386 libstdc++6:i386 zlib1g:i386 \
+    libssl-dev libc6-dev file ant libopus0 libpcre3 libpcre3-dev build-essential nasm libc6:amd64 libstdc++6:amd64 zlib1g:amd64 \
     openjdk-8-jdk unzip
 
 ##############################
 # Configuration
 ##############################
 
-# ENV TARGET_ARCHS "armeabi armeabi-v7a x86 mips arm64-v8a x86_64 mips64"
-ENV TARGET_ARCHS "armeabi-v7a x86 arm64-v8a x86_64" 
-ENV ANDROID_NDK_DOWNLOAD_URL "https://dl.google.com/android/repository/android-ndk-r25c-linux.zip"
+# ENV TARGET_ARCHS "armeabi armeabi-v7a x86 mips arm64-v8a x86_64 mips64 arm64"
+ENV TARGET_ARCHS "armeabi armeabi-v7a x86 arm64-v8a x86_64" 
+# Android NDK LTS latest
+ENV ANDROID_NDK_DOWNLOAD_URL "https://dl.google.com/android/repository/android-ndk-r26-linux.zip" 
 ENV ANDROID_SDK_DOWNLOAD_URL "https://dl.google.com/android/repository/tools_r25.2.5-linux.zip"
-ENV ANDROID_SETUP_APIS "23 25"
-ENV ANDROID_BUILD_TOOLS_VERSION 25
+ENV ANDROID_SETUP_APIS "23 30"
+ENV ANDROID_BUILD_TOOLS_VERSION 3
 ENV ANDROID_TARGET_API 23
 
+# PJSIP version 2.13
 ENV PJSIP_DOWNLOAD_URL "https://github.com/pjsip/pjproject/archive/refs/tags/2.13.tar.gz"
 
 ENV SWIG_DOWNLOAD_URL "http://prdownloads.sourceforge.net/swig/swig-4.1.1.tar.gz"
 
-ENV OPENSSL_DOWNLOAD_URL "https://www.openssl.org/source/openssl-1.0.2g.tar.gz"
+ENV OPENSSL_DOWNLOAD_URL "https://www.openssl.org/source/openssl-1.1.1u.tar.gz"
 
-ENV OPUS_DOWNLOAD_URL "http://downloads.xiph.org/releases/opus/opus-1.2.1.tar.gz"
-ENV OPUS_ANDROID_MK_DOWNLOAD_URL "https://trac.pjsip.org/repos/raw-attachment/ticket/1904/Android.mk"
+ENV OPUS_DOWNLOAD_URL "http://downloads.xiph.org/releases/opus/opus-1.3.1.tar.gz"
+# ENV OPUS_ANDROID_MK_DOWNLOAD_URL "https://trac.pjsip.org/repos/raw-attachment/ticket/1904/Android.mk"
 
 ENV PATH /sources/android_ndk:$PATH
 
@@ -105,8 +107,9 @@ RUN cd /sources/opus && \
     rm -rf opus.tar.gz && \
     mv opus-*/* ./ && \
     mkdir ./jni && \
-    cd ./jni && \
-    curl -L -# -o Android.mk "$OPUS_ANDROID_MK_DOWNLOAD_URL"
+    cd ./jni
+    #  && \
+    # curl -L -# -o Android.mk "$OPUS_ANDROID_MK_DOWNLOAD_URL"
 
 
 ##############################
